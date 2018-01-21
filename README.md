@@ -1,4 +1,4 @@
-# VGA_mem_mapped
+# Mandel_HLS
 
 ![screenshot](https://github.com/delhatch/Mandel_HLS/blob/master/system_diagram_8_engines.JPG)
 
