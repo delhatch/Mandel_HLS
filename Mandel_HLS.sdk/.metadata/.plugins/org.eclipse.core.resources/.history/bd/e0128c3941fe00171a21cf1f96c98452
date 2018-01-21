@@ -1,0 +1,295 @@
+#include "platform.h"
+#include "xparameters.h"
+#include "xgpio.h"
+#include "xstatus.h"
+#include "xil_printf.h"
+#include "VGA.h"
+#include "xil_mmu.h"
+#include "xil_assert.h"
+#include "xil_io.h"
+#include "xmandel_engine.h"
+
+/* Definitions */
+#define GPIO_DEVICE_ID  XPAR_AXI_GPIO_0_DEVICE_ID	/* GPIO device that LEDs are connected to */
+#define LED 0x00									/* Initial LED value - XX0000XX */
+#define LED_DELAY 100000000							/* Software delay length */
+#define LED_CHANNEL 1								/* GPIO port for LEDs */
+#define printf xil_printf							/* smaller, optimised printf */
+#define VGA_CONFIG_BASE_ADDRESS 	0x43c00000      /* Control reg's for the VGA circuitry */
+#define VGA_MEMORY_ATTRIBUTE 0x00010c06             /* Attribute applied to VGA frame buffer in DRAM. */
+
+XGpio Gpio;											/* GPIO Device driver instance for LEDs */
+
+XMandel_engine Engine0, Engine1, Engine2, Engine3;
+XMandel_engine_Config *Engine0ptr;
+XMandel_engine_Config *Engine1ptr;
+XMandel_engine_Config *Engine2ptr;
+XMandel_engine_Config *Engine3ptr;
+
+vga vga_obj;
+vga_frame vga_frame_obj;
+vga_pixel vga_pixel_obj;
+
+int w = 640, h = 240;
+int x, xx0, xx1, xx2, xx3, y, yy0, yy1, yy2, yy3;
+int temp;
+float pr, pi;                       //real and imaginary part of the Mandelbrot pixel p
+float newRe, newIm, oldRe, oldIm;   //real and imaginary parts of new and old z
+int maxIterations = 255;            //after how much iterations the function should stop
+int i;                              // number of iterations
+float temp_float;
+int temp_int, tmp;
+
+int status;
+float float_a, float_r1;
+u32 get_r1;
+u32 ret_val;
+int is_ready0, is_ready1, is_ready2, is_ready3;
+int done;
+int started0, started1, started2, started3;
+
+int main()
+{
+	int Status;
+	int led = LED; /* Hold current LED value. Initialise to LED definition */
+//---------------  LEDS  --------------------------------------------------
+	/* GPIO driver initialisation */
+	Status = XGpio_Initialize(&Gpio, GPIO_DEVICE_ID);
+	if (Status != XST_SUCCESS) {
+		return XST_FAILURE;
+	}
+	/*Set the direction for the LEDs to output. */
+	XGpio_SetDataDirection(&Gpio, LED_CHANNEL, 0x00);
+	/* Write output to the LEDs. */
+	XGpio_DiscreteWrite(&Gpio, LED_CHANNEL, led);
+//--------------  END OF LEDS  ---------------------------------------------
+
+    print("Hello World\n\r");
+
+//---------------------------------------------------------------------------
+//  The section below uses a local frame buffer (called vga_frame_obj) to hold all pixel
+//      writes. It then flushes the image to the physical VGA frame
+//      buffer (located in DRAM at address VGA_FRAME_ADDRESS, see VGA.h) when
+//      vga_frame_draw() is called.
+//  The code, as an example, draws the initial gray circle. It is safer and easier
+//      to do graphics this way then the way the Mandelbrot section does it. The
+//      Mandelbrot code access the VGA frame buffer DRAM memory directly, which is faster,
+//      but more dangerous because accidental writes to non-VGA memory could be fatal.
+
+    /* Configure VGA frame buffer memory to device. */
+    Xil_SetTlbAttributes(VGA_FRAME_ADDRESS,VGA_MEMORY_ATTRIBUTE);
+
+    /* Configure the vga object. */
+    vga_setup(&vga_obj,(uint32_t*)VGA_CONFIG_BASE_ADDRESS,(vga_frame*)VGA_FRAME_ADDRESS);
+
+    /* Clear the image frame, then draws a simple circle, then flushes the local buffer to VGA memory in DRAM for display. */
+    vga_pixel_setup( &vga_pixel_obj, 0x4,0x4,0x4);
+    vga_frame_clear( &vga_frame_obj);
+    vga_frame_draw_circle_filled( &vga_frame_obj,VGA_SCREEN_WIDTH>>1,VGA_SCREEN_HEIGHT>>1,100,vga_pixel_obj);
+    vga_frame_draw( &vga_frame_obj, &vga_obj);
+
+    xil_printf("----------------------\n\r");
+    pi = 0.1;
+    pr = 0.4;
+
+    Engine0ptr = XMandel_engine_LookupConfig( XPAR_MANDEL_ENGINE_0_DEVICE_ID );
+    if( !Engine0ptr ) {
+    	xil_printf("ERROR Lookup 0 failed. \n\r");
+    	return XST_FAILURE;
+    }
+    status = XMandel_engine_CfgInitialize( &Engine0, Engine0ptr );
+    if( status != XST_SUCCESS ) {
+    	xil_printf("ERROR: Could not init engine 0\n\r");
+    	return (-1);
+    }
+
+    Engine1ptr = XMandel_engine_LookupConfig( XPAR_MANDEL_ENGINE_1_DEVICE_ID );
+    if( !Engine1ptr ) {
+    	xil_printf("ERROR Lookup 1 failed. \n\r");
+    	return XST_FAILURE;
+    }
+    status = XMandel_engine_CfgInitialize( &Engine1, Engine1ptr );
+    if( status != XST_SUCCESS ) {
+    	xil_printf("ERROR: Could not init engine 1\n\r");
+    	return (-1);
+    }
+
+    Engine2ptr = XMandel_engine_LookupConfig( XPAR_MANDEL_ENGINE_2_DEVICE_ID );
+    if( !Engine2ptr ) {
+    	xil_printf("ERROR Lookup 2 failed. \n\r");
+    	return XST_FAILURE;
+    }
+    status = XMandel_engine_CfgInitialize( &Engine2, Engine2ptr );
+    if( status != XST_SUCCESS ) {
+    	xil_printf("ERROR: Could not init engine 2\n\r");
+    	return (-1);
+    }
+
+    Engine3ptr = XMandel_engine_LookupConfig( XPAR_MANDEL_ENGINE_3_DEVICE_ID );
+    if( !Engine3ptr ) {
+    	xil_printf("ERROR Lookup 3 failed. \n\r");
+    	return XST_FAILURE;
+    }
+    status = XMandel_engine_CfgInitialize( &Engine3, Engine3ptr );
+    if( status != XST_SUCCESS ) {
+    	xil_printf("ERROR: Could not init engine 3\n\r");
+    	return (-1);
+    }
+
+    XMandel_engine_DisableAutoRestart( &Engine1 );
+    //XMandel_engine_EnableAutoRestart( &Engine1 );
+
+    // Set the input parameters of the engine
+    XMandel_engine_Set_pr( &Engine1, *((u32*)&pr) );
+    XMandel_engine_Set_pi( &Engine1, *((u32*)&pi) );
+
+    do {
+ 	   is_ready1 = XMandel_engine_IsReady( &Engine1 );
+    } while( is_ready1 == 0 );
+    xil_printf("Got here1.\n\r");
+
+    // Start it and read results
+    XMandel_engine_Start( &Engine1 );
+    do {
+ 	   is_ready1 = XMandel_engine_IsDone( &Engine1 );
+ 	  xil_printf("Got here2.\n\r");
+    } while( is_ready1 == 0 );
+    i = XMandel_engine_Get_return( &Engine1 );
+    xil_printf("ret_val = %d\n\r", i );
+
+    //pi = 0.1;
+    //pr = 0.4;
+    //XMandel_engine_Set_pr( &Engine1, *((u32*)&pr) );
+    //XMandel_engine_Set_pi( &Engine1, *((u32*)&pi) );
+    do {
+ 	   is_ready1 = XMandel_engine_IsReady( &Engine1 );
+    } while( is_ready1 == 0 );
+    xil_printf("Got here.\n\r");
+    i = XMandel_engine_Get_return( &Engine1 );
+    xil_printf("ret_val = %d\n\r", i );
+
+
+
+//------------  Draw MANDELBROT image  -------------------------------------------------------------
+    while(1) {
+    led = (led + 1) & 0xff;  // Increment the Zedboard LEDS each time the Mandelbrot image is re-drawn. To see the speed.
+    XGpio_DiscreteWrite(&Gpio, LED_CHANNEL, led);
+
+    /*
+    //loop through every screen pixel (640 x 480)
+    for(x = 0; x < w; x++)
+        for(y = 0; y < h; y++)
+        {
+           //calculate the initial real and imaginary part of z, based on the pixel location and zoom and position values
+           pr = -2.0 + ( x * 0.0046875 );
+           pi = 1.125 - ( y * 0.0046875 );
+
+           // Set the input parameters of the engine
+           XMandel_engine_Set_pr( &Engine1, *((u32*)&pr) );
+           XMandel_engine_Set_pi( &Engine1, *((u32*)&pi) );
+           // Start it and read results
+           XMandel_engine_Start( &Engine1 );
+           do {
+        	   is_ready = XMandel_engine_IsReady( &Engine1 );
+           } while( is_ready == 0 );
+           i = XMandel_engine_Get_return( &Engine1 );
+
+           vga_set_pixel( x, y, i);
+           temp = 479 - y;             // For the full image, can take advantage of mirroring about the y=0 axis.
+           vga_set_pixel( x, temp, i);
+        }
+    }
+    */
+    started0 = 0;
+    started1 = 0;
+    started2 = 0;
+    started3 = 0;
+    for(x = 0; x < w; x++)
+        for(y = 0; y < h; y++)
+        {
+           //calculate the initial real and imaginary part of z, based on the pixel location and zoom and position values
+           pr = -2.0 + ( x * 0.0046875 );
+           pi = 1.125 - ( y * 0.0046875 );
+           // Wait here until an engine is available for a new set of coordinates.
+           // If an engine IsReady, need to check if result is available. If so, plot it. Then it is ready to receive new coordinates.
+           do {
+                  is_ready0 = XMandel_engine_IsReady( &Engine0 );
+                  if( (is_ready0 != 0) && (started0 == 1) ) {
+                	  i = XMandel_engine_Get_return( &Engine0 );
+                	  vga_set_pixel( xx0, yy0, i);
+                	  temp = 479 - yy0;             // For the full image, can take advantage of mirroring about the y=0 axis.
+                	  vga_set_pixel( xx0, temp, i);
+                	  started0 = 0;
+                	  is_ready0 = 1;
+                	  break;
+                  }
+
+                  is_ready1 = XMandel_engine_IsReady( &Engine1 );
+                  if( (is_ready1 != 0) && (started1 == 1) ) {
+                   	  i = XMandel_engine_Get_return( &Engine1 );
+                   	  vga_set_pixel( xx1, yy1, i);
+                   	  temp = 479 - yy1;
+                   	  vga_set_pixel( xx1, temp, i);
+                   	  started1 = 0;
+                   	  is_ready1 = 1;
+                   	  break;
+                  }
+
+                  is_ready2 = XMandel_engine_IsReady( &Engine2 );
+                  if( (is_ready2 != 0) && (started2 == 1) ) {
+                   	  i = XMandel_engine_Get_return( &Engine2 );
+                   	  vga_set_pixel( xx2, yy2, i);
+                   	  temp = 479 - yy2;
+                   	  vga_set_pixel( xx2, temp, i);
+                   	  started2 = 0;
+                   	  is_ready2 = 1;
+                   	  break;
+                  }
+
+                  is_ready3 = XMandel_engine_IsReady( &Engine3 );
+                  if( (is_ready3 != 0) && (started3 == 1) ) {
+                   	  i = XMandel_engine_Get_return( &Engine3 );
+                   	  vga_set_pixel( xx3, yy3, i);
+                   	  temp = 479 - yy3;
+                   	  vga_set_pixel( xx3, temp, i);
+                   	  started3 = 0;
+                   	  is_ready3 = 1;
+                   	  break;
+                  }
+           } while( (!is_ready0) && (!is_ready1) && (!is_ready2) && (!is_ready3) );
+
+           done = 0;   // Set flag that an engine has been started.
+
+           if( is_ready0 != 0 ) {
+              XMandel_engine_Set_pr( &Engine0, *((u32*)&pr) );
+              XMandel_engine_Set_pi( &Engine0, *((u32*)&pi) );
+              XMandel_engine_Start( &Engine0 );
+              done = 1;
+              xx0 = x; yy0 = y; started0 = 1;
+           }
+           if( (is_ready1 != 0) && ( done == 0)  ) {
+              XMandel_engine_Set_pr( &Engine1, *((u32*)&pr) );
+              XMandel_engine_Set_pi( &Engine1, *((u32*)&pi) );
+              XMandel_engine_Start( &Engine1 );
+              done = 1;
+              xx1 = x; yy1 = y; started1 = 1;
+           }
+           if( (is_ready2 != 0) && ( done == 0)  ) {
+              XMandel_engine_Set_pr( &Engine2, *((u32*)&pr) );
+              XMandel_engine_Set_pi( &Engine2, *((u32*)&pi) );
+              XMandel_engine_Start( &Engine2 );
+              done = 1;
+              xx2 = x; yy2 = y; started2 = 1;
+           }
+           if( (is_ready3 != 0) && ( done == 0)  ) {
+              XMandel_engine_Set_pr( &Engine3, *((u32*)&pr) );
+              XMandel_engine_Set_pi( &Engine3, *((u32*)&pi) );
+              XMandel_engine_Start( &Engine3 );
+              done = 1;
+              xx3 = x; yy3 = y; started3 = 1;
+           }
+        }   // end of "for y"
+    }   // end of "for x"
+    return 0;
+
+}

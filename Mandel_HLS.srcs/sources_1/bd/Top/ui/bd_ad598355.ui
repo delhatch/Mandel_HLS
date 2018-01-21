@@ -1,0 +1,59 @@
+{
+   ExpandedHierarchyInLayout: "",
+   guistr: "# # String gsaved with Nlview 6.6.11  2017-06-12 bk=1.3860 VDI=40 GEI=35 GUI=JA:1.6
+#  -string -flagsOSRD
+preplace port DDR -pg 1 -y 260 -defaultsOSRD
+preplace port VGA_vSync -pg 1 -y 320 -defaultsOSRD
+preplace port leds_8bits -pg 1 -y 1330 -defaultsOSRD
+preplace port VGA_hSync -pg 1 -y 210 -defaultsOSRD
+preplace port FIXED_IO -pg 1 -y 280 -defaultsOSRD
+preplace portBus VGA_B -pg 1 -y 230 -defaultsOSRD
+preplace portBus VGA_R -pg 1 -y 350 -defaultsOSRD
+preplace portBus VGA_G -pg 1 -y 300 -defaultsOSRD
+preplace inst VGA_v1_0_0 -pg 1 -lvl 1 -y 750 -defaultsOSRD
+preplace inst mandel_engine_0 -pg 1 -lvl 4 -y 480 -defaultsOSRD
+preplace inst mandel_engine_1 -pg 1 -lvl 4 -y 870 -defaultsOSRD
+preplace inst axi_gpio_0 -pg 1 -lvl 1 -y 910 -defaultsOSRD
+preplace inst mandel_engine_2 -pg 1 -lvl 4 -y 740 -defaultsOSRD
+preplace inst mandel_engine_3 -pg 1 -lvl 4 -y 610 -defaultsOSRD
+preplace inst mandel_engine_4 -pg 1 -lvl 4 -y 1000 -defaultsOSRD
+preplace inst mandel_engine_5 -pg 1 -lvl 4 -y 350 -defaultsOSRD
+preplace inst axi_interconnect_0 -pg 1 -lvl 3 -y 840 -defaultsOSRD
+preplace inst mandel_engine_6 -pg 1 -lvl 4 -y 1130 -defaultsOSRD
+preplace inst axi_interconnect_1 -pg 1 -lvl 3 -y 410 -defaultsOSRD
+preplace inst mandel_engine_7 -pg 1 -lvl 4 -y 1260 -defaultsOSRD
+preplace inst rst_ps7_0_100M -pg 1 -lvl 2 -y 390 -defaultsOSRD
+preplace inst processing_system7_0 -pg 1 -lvl 1 -y 530 -defaultsOSRD
+preplace netloc axi_interconnect_0_M09_AXI 1 3 1 1000
+preplace netloc processing_system7_0_DDR 1 1 4 270 270 N 270 1050 260 NJ
+preplace netloc VGA_v1_0_0_h_sync 1 1 4 260 210 N 210 N 210 NJ
+preplace netloc VGA_v1_0_0_vga_b 1 1 4 310 230 N 230 N 230 NJ
+preplace netloc VGA_v1_0_0_m_axi_fb 1 1 2 340 300 730
+preplace netloc VGA_v1_0_0_v_sync 1 1 4 280 220 N 220 N 220 1390J
+preplace netloc rst_ps7_0_100M_peripheral_aresetn 1 0 4 -210 400 300 480 730 540 1050
+preplace netloc axi_interconnect_0_M02_AXI 1 3 1 1020
+preplace netloc processing_system7_0_FCLK_RESET0_N 1 1 1 350J
+preplace netloc VGA_v1_0_0_vga_r 1 1 4 360 250 N 250 N 250 1370J
+preplace netloc axi_interconnect_0_M07_AXI 1 3 1 1010
+preplace netloc axi_interconnect_0_M08_AXI 1 3 1 1010
+preplace netloc axi_interconnect_0_M04_AXI 1 3 1 1060
+preplace netloc VGA_v1_0_0_vga_g 1 1 4 330 240 N 240 N 240 1380J
+preplace netloc S00_AXI_1 1 1 2 N 510 710
+preplace netloc processing_system7_0_FIXED_IO 1 1 4 290 280 N 280 N 280 NJ
+preplace netloc axi_interconnect_0_M05_AXI 1 3 1 N
+preplace netloc axi_gpio_0_GPIO 1 1 4 N 910 700 1150 990 1330 NJ
+preplace netloc axi_interconnect_0_M00_AXI 1 0 4 -230 190 N 190 N 190 1000
+preplace netloc axi_interconnect_0_M01_AXI 1 0 4 -200 1140 N 1140 N 1140 990
+preplace netloc processing_system7_0_FCLK_CLK0 1 0 4 -220 390 320 290 720 530 1040
+preplace netloc axi_interconnect_0_M06_AXI 1 3 1 1020
+preplace netloc axi_interconnect_1_M00_AXI 1 0 4 -200 260 N 260 N 260 990
+preplace netloc axi_interconnect_0_M03_AXI 1 3 1 1030
+preplace netloc rst_ps7_0_100M_interconnect_aresetn 1 2 1 700
+levelinfo -pg 1 -250 30 530 860 1220 1410 -top 0 -bot 1660
+",
+}
+{
+   da_board_cnt: "1",
+   da_clkrst_cnt: "19",
+   da_ps7_cnt: "1",
+}
