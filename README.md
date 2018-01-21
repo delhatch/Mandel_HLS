@@ -22,15 +22,13 @@ The project uses the memory-mapped VGA display I used in other projects. See tho
 
 ** Performance
 
-As you can see 24 cycles are required for each loop. 
+As you can see, the sythesized floating point engine requires 24 cycles for each loop. In comparison, the fixed-point implementation I wrote (see the Zedboard_Mandel project) requires just 4 cycles per loop. Quite a penalty for floating point, and perhaps for using C code to generate the IP as well.
 
 ![screenshot](https://github.com/delhatch/Mandel_HLS/blob/master/cycles.JPG)
 
-In the Zedboard_Mandel project I used fractional integers, and wrote the engine directly in Verilog. That engine could complete a loop in 4 cycles!
+Therefore, even with 8 engines, the Mandelbrot image takes 1.4 seconds to create. This is better than the pure-ARM version that required 2.2 seconds to compute a frame, but not improvement as I expected.
 
-Therefore, even with 8 engines, the Mandelbrot image takes 1.4 seconds to create. This is better than the pure-ARM version that required 2.2 seconds to compute a frame, but not by as much as expected.
-
-The integer version, written in Verilog, was able to achieve 18.6 frames per second.
+The integer version, written in Verilog, and writing directly to the VGA frame buffer (no ARM processor involved) was able to achieve 18.6 frames per second.
 
 ** Improvements
 
@@ -38,7 +36,7 @@ This project is mainly a demonstration of how to use Vivado HLS to create IP, an
 
 One area for focus would be to try to speed up the floating-point engine, but this might not be possible given how many cycles floating-point calculations require.
 
-Even with the (relatively) slow engines compared to fixed-point engines, the Zynq processor's C code is the bottleneck. The engines need to be able to access the VGA frame buffer directly, as seen in the Zedboard_Mandel project.
+However, even with the relatively slow engines compared to fixed-point engines, the Zynq processor's C code is the bottleneck. The engines need to be able to access the VGA frame buffer directly, as seen in the Zedboard_Mandel project.
 
 
 
