@@ -26,7 +26,7 @@ As you can see, the sythesized floating point engine requires 24 cycles for each
 
 ![screenshot](https://github.com/delhatch/Mandel_HLS/blob/master/cycles.JPG)
 
-Therefore, even with 8 engines, the Mandelbrot image takes 1.4 seconds to create. This is better than the pure-ARM version that required 2.2 seconds to compute a frame, but not improvement as I expected.
+Therefore, even with 8 engines, the Mandelbrot image takes 1.4 seconds to create. This is better than the pure-ARM version that required 2.2 seconds to compute a frame, but this was not as much improvement as I expected.
 
 The integer version, written in Verilog, and writing directly to the VGA frame buffer (no ARM processor involved) was able to achieve 18.6 frames per second.
 
